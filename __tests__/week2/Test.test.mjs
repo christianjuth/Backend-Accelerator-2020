@@ -2,7 +2,7 @@ import request from 'supertest';
 import { app } from '../../week2/Test';
 import "babel-polyfill"
 
-describe('Test', () => {
+describe('wee2 Test', () => {
 
   it('GET /sum', async (done) => {
     const res = await request(app)
@@ -28,18 +28,35 @@ describe('Test', () => {
   });
 
   it('GET/POST /testscores', async (done) => {
-    const postRes = await request(app)
+    const SCORE1 = '50%';
+    const SCORE2 = '75%';
+
+    // first score
+    const postRes1 = await request(app)
       .post('/testscores')
       .send({
-        score: '50%'
+        score: SCORE1
       });
-    expect(postRes.statusCode).toBe(200);
-    expect(postRes.text).toBe('Added new score');
+    expect(postRes1.statusCode).toBe(200);
+    expect(postRes1.text).toBe('Added new score');
 
-    const getRes = await request(app)
+    const getRes1 = await request(app)
       .get('/testscores');
-    expect(getRes.statusCode).toBe(200);
-    expect(getRes.text).toBe('50%');
+    expect(getRes1.statusCode).toBe(200);
+    expect(getRes1.text).toBe(SCORE1);
+
+    const postRes2 = await request(app)
+      .post('/testscores')
+      .send({
+        score: SCORE2
+      });
+    expect(postRes2.statusCode).toBe(200);
+    expect(postRes2.text).toBe('Added new score');
+
+    const getRes2 = await request(app)
+      .get('/testscores');
+    expect(getRes2.statusCode).toBe(200);
+    expect(getRes2.text).toBe(`${SCORE1}, ${SCORE2}`);
     done();
   });
 

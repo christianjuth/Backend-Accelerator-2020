@@ -2,7 +2,7 @@ import request from 'supertest';
 import { app } from '../../week1/firstserver';
 import "babel-polyfill"
 
-describe('firstserver', () => {
+describe('week1 firstserver', () => {
 
   it('GET /hello_world', async (done) => {
     const res = await request(app).get('/hello_world');

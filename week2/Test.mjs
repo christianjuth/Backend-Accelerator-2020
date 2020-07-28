@@ -25,7 +25,7 @@ app.get('/sum', (req, res) => {
 const testscores = [];
 
 app.post('/testscores', (req, res) => {
-  const score = req.body.score;
+  const { score } = req.body;
   testscores.push(score);
   res.send('Added new score');
 });
