@@ -1,5 +1,6 @@
-import express from 'express';
-import bodyParser from 'body-parser';
+const express = require('express');
+const bodyParser = require('body-parser');
+const config = require('../../config');
 
 // Helper Functions
 function randomInt(min, max) {
@@ -7,7 +8,7 @@ function randomInt(min, max) {
 }
 
 // Express App
-export const app = express();
+const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.raw());
@@ -25,7 +26,7 @@ app.get('/sum', (req, res) => {
 const testscores = [];
 
 app.post('/testscores', (req, res) => {
-  const score = req.body.score;
+  const { score } = req.body;
   testscores.push(score);
   res.send('Added new score');
 });
@@ -34,4 +35,9 @@ app.get('/testscores', (req, res) => {
   res.send(testscores.join(', '));
 });
 
-app.listen(3000);
+app.listen(config.port, () => {
+  console.log(`App listening at http://localhost:${config.port}`)
+});
+
+// Export app for testing
+exports.app = app;

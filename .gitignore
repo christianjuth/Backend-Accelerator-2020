@@ -7,3 +7,5 @@ npm-debug.log
 !.yarn/releases
 !.yarn/plugins
 .pnp.*
+globalConfig.json
+*.log
