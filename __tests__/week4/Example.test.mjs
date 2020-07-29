@@ -1,11 +1,10 @@
 import request from 'supertest';
-import { app } from '../../week3/HW_Solutions';
+import { app } from '../../week4/Example';
 import "babel-polyfill";
 
-const TEST_RESTAURANT = 'Brower';
-const TEST_RESTAURANT_2 = "Henry's Diner";
+const TEST_RESTAURANT = 'Brower;'
 
-describe('week3 HW_Solutions', () => {
+describe('week4 Example', () => {
 
   it('GET/POST /restaurants', async (done) => {
     // Verify that restaurant is initially empty
@@ -30,6 +29,40 @@ describe('week3 HW_Solutions', () => {
       .get('/restaurants');
     expect(getRes.statusCode).toBe(200);
     expect(JSON.parse(getRes.text)[0]).toMatchObject(RESTAURANT);
+
+    done();
+  });
+  
+  it('PUT/DELETE /restaurants/:resName', async (done) => {
+    const RESTAURANT = {
+      name: TEST_RESTAURANT,
+      address: 'Busch'
+    };
+
+    // Update Restaurant
+    const postRes = await request(app)
+      .put(`/restaurants/${RESTAURANT.name}`)
+      .send(RESTAURANT);
+    //expect(postRes.statusCode).toBe(200);
+    expect(postRes.text).toBe(`${RESTAURANT.name} updated, success!`);
+
+    // Verify update
+    const getRes = await request(app)
+      .get('/restaurants');
+    expect(getRes.statusCode).toBe(200);
+    expect(JSON.parse(getRes.text)[0]).toMatchObject(RESTAURANT);
+    
+    // Delete restaurant
+    const deleteRes = await request(app)
+      .delete(`/restaurants/${RESTAURANT.name}`);
+    expect(deleteRes.statusCode).toBe(200);
+    expect(deleteRes.text).toBe(`Successfully deleted ${RESTAURANT.name}`);
+    
+    // Delete not found
+    const deleteResError = await request(app)
+      .delete(`/restaurants/${RESTAURANT.name}`);
+    expect(deleteResError.statusCode).toBe(404);
+    expect(deleteResError.text).toBe(`Unable to delete ${RESTAURANT.name}`);
 
     done();
   });
@@ -71,60 +104,6 @@ describe('week3 HW_Solutions', () => {
       .send(ITEM);
     expect(overwriteItem.statusCode).toBe(409);
     expect(overwriteItem.text).toBe('Error item exists already');
-
-    done();
-  });
-
-  it('GET/POST /restaurants/:resName/reviews', async (done) => {
-    // Verify restaurant 404
-    const initialRes = await request(app).post('/restaurants/test/reviews');
-    expect(initialRes.statusCode).toBe(404);
-    expect(initialRes.text).toBe('Error restaurant does not exist');
-
-    const REVIEW1 = {
-      reviewUsername: 'busch-goose',
-      reviewStars: 4,
-      reviewComment: 'fight me'
-    };
-    
-    const REVIEW2 = {
-      reviewUsername: 'snipp',
-      reviewStars: 5,
-      reviewComment: 'I shall save thee'
-    };
-
-    // Add review to restaurant
-    const addReview = await request(app)
-      .post(`/restaurants/${TEST_RESTAURANT}/reviews`)
-      .send(REVIEW1);
-    expect(addReview.statusCode).toBe(200);
-    expect(addReview.text).toBe(`Success new comment has been added to review section of ${TEST_RESTAURANT}`);
-    
-    // Verify first review
-    const verifyAdd2 = await request(app)
-      .get(`/restaurants/${TEST_RESTAURANT}/reviews`);
-    expect(verifyAdd2.statusCode).toBe(200);
-    expect(JSON.parse(verifyAdd2.text)).toMatchObject([REVIEW1]);
-    
-    // Add second review
-    const addReview2 = await request(app)
-      .post(`/restaurants/${TEST_RESTAURANT}/reviews`)
-      .send(REVIEW2);
-    expect(addReview2.statusCode).toBe(200);
-    expect(addReview2.text).toBe(`Success new comment has been added to review section of ${TEST_RESTAURANT}`);
-
-    // Verify first and second review
-    const verifyAdd = await request(app)
-      .get(`/restaurants/${TEST_RESTAURANT}/reviews`);
-    expect(verifyAdd.statusCode).toBe(200);
-    expect(JSON.parse(verifyAdd.text)).toMatchObject([REVIEW1, REVIEW2]);
-
-    // Try and overwrite
-    const overwritePost = await request(app)
-      .post(`/restaurants/${TEST_RESTAURANT}/reviews`)
-      .send(REVIEW1);
-    expect(overwritePost.statusCode).toBe(409);
-    expect(overwritePost.text).toBe('Error you have already written a review');
 
     done();
   });
