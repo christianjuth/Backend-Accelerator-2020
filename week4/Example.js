@@ -1,8 +1,8 @@
-import express from 'express';
-import bodyParser from 'body-parser';
+const express = require('express');
+const bodyParser = require('body-parser');
 
 // Express App
-export const app = express();
+const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.raw());
@@ -57,18 +57,17 @@ app.put('/restaurants/:resName', (req, res) => {
 
 app.delete('/restaurants/:resName', (req, res) => {
   const { resName } = req.params; 
-  const { name, address } = req.body;
   
-  let wasRemoved = false;
-  restaurantList = restaurantList.filter(r => {
-    if (r.name === resName) {
-      wasRemoved = true;
-      return false;
-    }
-    return true;
-  })
+  const updatedRestaurantList = restaurantList.filter(r => r.name !== resName);
   
-  if (wasRemoved) {
+  if (updatedRestaurantList.length < restaurantList.length) {
+    // save our change
+    restaurantList = updatedRestaurantList;
+
+    // perform additional cleanup
+    delete menuItems[resName];
+    delete reviews[resName];
+
     res.status(200).send(`Successfully deleted ${resName}`);
     return;
   }
@@ -113,3 +112,8 @@ app.get('/restaurants/:resName/items', (req, res) => {
 
   res.send(menuItems[resName]);
 });
+
+app.listen(3000);
+
+// Export app for testing
+exports.app = app;

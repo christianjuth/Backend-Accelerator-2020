@@ -1,8 +1,9 @@
-import express from 'express';
-import bodyParser from 'body-parser';
+const express = require('express');
+const bodyParser = require('body-parser');
 
 // Express App
-export const app = express();
+const app = express();
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.raw());
@@ -32,3 +33,6 @@ app.get('/books', (req, res) => {
 });
 
 app.listen(3000);
+
+// Export app for testing
+exports.app = app;

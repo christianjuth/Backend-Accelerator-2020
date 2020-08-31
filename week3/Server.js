@@ -1,8 +1,8 @@
-import express from 'express';
-import bodyParser from 'body-parser';
+const express = require('express');
+const bodyParser = require('body-parser');
 
 // Express App
-export const app = express();
+const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.raw());
@@ -70,48 +70,7 @@ app.get('/restaurants/:resName/items', (req, res) => {
   res.send(menuItems[resName]);
 });
 
-// HOMEOWRK STARTING FROM HERE
-
-app.post('/restaurants/:resName/reviews', (req, res) => {
-  const { resName } = req.params; 
-  const { reviewUsername, reviewStars, reviewComment } = req.body;
-
-  if (reviews[resName] === undefined) {
-    res.status(404).send("Error restaurant does not exist");
-    return;
-  }
-
-  for (const r of reviews[resName]) {
-    if (r.reviewUsername === reviewUsername) {
-      res.status(409).send("Error you have already written a review");
-      return;
-    }
-  }
-
-  reviews[resName].push({
-    reviewUsername, 
-    itemResName: resName, 
-    reviewStars, 
-    reviewComment
-  });
-  res.send(`Success new comment has been added to review section of ${resName}`);
-
-});
-
-app.get('/restaurants/:resName/reviews', (req, res) => {
-  const { resName } = req.params;
-  const { limit } = req.query;
-  
-  if (reviews[resName] === undefined) {
-    res.status(404).send("Error restaurant does not exist");
-    return;
-  }
-
-  let items = reviews[resName];
-  if (limit) {
-    items = items.slice(0, limit)
-  }
-  res.send(items);
-});
-
 app.listen(3000);
+
+// Export app for testing
+exports.app = app;

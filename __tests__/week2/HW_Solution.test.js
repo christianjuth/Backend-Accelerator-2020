@@ -1,6 +1,5 @@
-import request from 'supertest';
-import { app } from '../../week2/HW_Solution';
-import "babel-polyfill"
+const request = require('supertest');
+const { app } = require('../../week2/HW_Solution');
 
 describe('week2 HW_Solution', () => {
 

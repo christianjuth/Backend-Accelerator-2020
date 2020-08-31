@@ -1,6 +1,6 @@
-import express from 'express';
+const express = require('express');
 
-export default () => {
+module.exports = () => {
   const app = express();
   app.listen = jest.fn();
   return app;

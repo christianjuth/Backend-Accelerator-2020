@@ -1,5 +1,5 @@
-import express from 'express';
-import bodyParser from 'body-parser';
+const express = require('express');
+const bodyParser = require('body-parser');
 
 // Helper Functions
 function randomInt(min, max) {
@@ -7,7 +7,7 @@ function randomInt(min, max) {
 }
 
 // Express App
-export const app = express();
+const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.raw());
@@ -35,3 +35,6 @@ app.get('/testscores', (req, res) => {
 });
 
 app.listen(3000);
+
+// Export app for testing
+exports.app = app;
