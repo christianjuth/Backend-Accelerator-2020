@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { app } = require('../../week2/HW_Solution');
+const { app } = require('../../src/week2/HW_Solution');
 
 describe('week2 HW_Solution', () => {
 

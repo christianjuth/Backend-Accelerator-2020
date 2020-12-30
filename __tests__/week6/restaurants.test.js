@@ -1,27 +1,42 @@
 const request = require('supertest');
-const { app } = require('../../src/week4/Example');
+const { app } = require('../../src/week6/restaurants');
+const { resetDatabase } = require('../database-helpers');
 
 const TEST_RESTAURANT = 'Brower';
 const TEST_RESTAURANT_2 = "Henry's Diner";
 const TEST_RESTAURANT_NOT_FOUND = "this does not exsist";
 
-describe('week4 Example', () => {
+let TEST_RESTAURANT_ID = ''
+
+const RESTAURANT1 = {
+  name: TEST_RESTAURANT,
+  address: 'College Ave'
+};
+
+const RESTAURANT2 = {
+  name: TEST_RESTAURANT_2,
+  address: 'Livi'
+};
+
+describe('week6 restaurants', () => {
+
+  beforeAll(function (done) {
+    app.on("mongoConnected", function(){
+      done();
+    });
+  });
+
+  afterAll(async function (done) {
+    app.emit('close');
+    await resetDatabase();
+    done();
+  });
 
   it('GET/POST /restaurants', async (done) => {
     // Verify that restaurant is initially empty
     const initialRes = await request(app).get('/restaurants');
     expect(initialRes.statusCode).toBe(200);
     expect(initialRes.text).toBe('[]');
-
-    const RESTAURANT1 = {
-      name: TEST_RESTAURANT,
-      address: 'College Ave'
-    };
-    
-    const RESTAURANT2 = {
-      name: TEST_RESTAURANT_2,
-      address: 'Livi'
-    };
     
     // Add restaurant one
     const addRes1 = await request(app)
@@ -35,6 +50,7 @@ describe('week4 Example', () => {
       .get('/restaurants');
     expect(verifyRes1.statusCode).toBe(200);
     expect(JSON.parse(verifyRes1.text)).toMatchObject([RESTAURANT1]);
+    TEST_RESTAURANT_ID = JSON.parse(verifyRes1.text)[0]._id;
     
     // Try and overwrite restaurant
     const overwrite = await request(app)
@@ -67,7 +83,7 @@ describe('week4 Example', () => {
     
     // Items should initially be empty
     const initialValue = await request(app)
-      .get(`/restaurants/${TEST_RESTAURANT}/items`);
+      .get(`/restaurants/${TEST_RESTAURANT_ID}/items`);
     expect(initialValue.statusCode).toBe(200);
     expect(initialValue.text).toBe('[]');
 
@@ -79,20 +95,20 @@ describe('week4 Example', () => {
 
     // Add item to restaurant menu
     const addResItem = await request(app)
-      .post(`/restaurants/${TEST_RESTAURANT}/items`)
+      .post(`/restaurants/${TEST_RESTAURANT_ID}/items`)
       .send(ITEM);
     expect(addResItem.statusCode).toBe(200);
     expect(addResItem.text).toBe(`Success new item added to menu of ${TEST_RESTAURANT}`);
 
     // Verify item was added to manu
     const verifyAdd = await request(app)
-      .get(`/restaurants/${TEST_RESTAURANT}/items`);
+      .get(`/restaurants/${TEST_RESTAURANT_ID}/items`);
     expect(verifyAdd.statusCode).toBe(200);
     expect(JSON.parse(verifyAdd.text)[0]).toMatchObject(ITEM);
 
     // Try and overwrite item
     const overwriteItem = await request(app)
-      .post(`/restaurants/${TEST_RESTAURANT}/items`)
+      .post(`/restaurants/${TEST_RESTAURANT_ID}/items`)
       .send(ITEM);
     expect(overwriteItem.statusCode).toBe(409);
     expect(overwriteItem.text).toBe('Error item exists already');
@@ -100,42 +116,56 @@ describe('week4 Example', () => {
     done();
   });
 
-  it('PUT/DELETE /restaurants/:resName', async (done) => {
-    const RESTAURANT = {
-      name: TEST_RESTAURANT,
-      address: 'Busch'
+  it('GET/POST /restaurants/:resName/reviews', async (done) => {
+    // Verify restaurant 404
+    const initialRes = await request(app).post(`/restaurants/${TEST_RESTAURANT_NOT_FOUND}/reviews`);
+    expect(initialRes.statusCode).toBe(404);
+    expect(initialRes.text).toBe('Error restaurant does not exist');
+
+    const REVIEW1 = {
+      reviewUsername: 'busch-goose',
+      reviewStars: 4,
+      reviewComment: 'fight me'
+    };
+    
+    const REVIEW2 = {
+      reviewUsername: 'snipp',
+      reviewStars: 5,
+      reviewComment: 'I shall save thee'
     };
 
-    // Update Restaurant
-    const postRes = await request(app)
-      .put(`/restaurants/${RESTAURANT.name}`)
-      .send(RESTAURANT);
-    //expect(postRes.statusCode).toBe(200);
-    expect(postRes.text).toBe(`${RESTAURANT.name} updated, success!`);
-
-    // Verify update
-    const getRes = await request(app)
-      .get('/restaurants');
-    expect(getRes.statusCode).toBe(200);
-    expect(JSON.parse(getRes.text)[0]).toMatchObject(RESTAURANT);
+    // Add review to restaurant
+    const addReview = await request(app)
+      .post(`/restaurants/${TEST_RESTAURANT_ID}/reviews`)
+      .send(REVIEW1);
+    expect(addReview.statusCode).toBe(200);
+    expect(addReview.text).toBe(`Success new comment has been added to review section of ${TEST_RESTAURANT}`);
     
-    // Delete restaurant
-    const deleteRes = await request(app)
-      .delete(`/restaurants/${RESTAURANT.name}`);
-    expect(deleteRes.statusCode).toBe(200);
-    expect(deleteRes.text).toBe(`Successfully deleted ${RESTAURANT.name}`);
+    // Verify first review
+    const verifyAdd2 = await request(app)
+      .get(`/restaurants/${TEST_RESTAURANT_ID}/reviews`);
+    expect(verifyAdd2.statusCode).toBe(200);
+    expect(JSON.parse(verifyAdd2.text)).toMatchObject([REVIEW1]);
     
-    // Delete not found
-    const deleteResError = await request(app)
-      .delete(`/restaurants/${RESTAURANT.name}`);
-    expect(deleteResError.statusCode).toBe(404);
-    expect(deleteResError.text).toBe(`Unable to delete ${RESTAURANT.name}`);
+    // Add second review
+    const addReview2 = await request(app)
+      .post(`/restaurants/${TEST_RESTAURANT_ID}/reviews`)
+      .send(REVIEW2);
+    expect(addReview2.statusCode).toBe(200);
+    expect(addReview2.text).toBe(`Success new comment has been added to review section of ${TEST_RESTAURANT}`);
 
-    // Verify cleanup
-    const verifyCleanup = await request(app)
-      .get(`/restaurants/${RESTAURANT.name}/items`);
-    expect(verifyCleanup.statusCode).toBe(404);
-    expect(verifyCleanup.text).toBe('Error restaurant does not exist');
+    // Verify first and second review
+    const verifyAdd = await request(app)
+      .get(`/restaurants/${TEST_RESTAURANT_ID}/reviews`);
+    expect(verifyAdd.statusCode).toBe(200);
+    expect(JSON.parse(verifyAdd.text)).toMatchObject([REVIEW1, REVIEW2]);
+
+    // Try and overwrite
+    const overwritePost = await request(app)
+      .post(`/restaurants/${TEST_RESTAURANT_ID}/reviews`)
+      .send(REVIEW1);
+    expect(overwritePost.statusCode).toBe(409);
+    expect(overwritePost.text).toBe(`Error you have already written a review for ${TEST_RESTAURANT}`);
 
     done();
   });

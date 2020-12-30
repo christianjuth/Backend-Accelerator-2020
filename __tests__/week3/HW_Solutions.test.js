@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { app } = require('../../week3/HW_Solutions');
+const { app } = require('../../src/week3/HW_Solutions');
 
 const TEST_RESTAURANT = 'Brower';
 const TEST_RESTAURANT_2 = "Henry's Diner";

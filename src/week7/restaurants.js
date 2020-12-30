@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const MongoClient = require('mongodb').MongoClient;
 const ObjectID = require('mongodb').ObjectID;
+const config = require('../../config');
 
 // Express App
 const app = express();
@@ -9,7 +10,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.raw());
 
-MongoClient.connect('mongodb+srv://christianjuth:cfHZQneznRETF4mcubEsWacZi@cluster0.53mpy.mongodb.net/rumad?retryWrites=true&w=majority' ?? 'mongodb://localhost:27017', { useUnifiedTopology: true }, (err, client) => {
+MongoClient.connect(config.mongoUri, { useUnifiedTopology: true }, (err, client) => {
   if (err) {
     console.error(err);
   }
@@ -29,8 +30,7 @@ MongoClient.connect('mongodb+srv://christianjuth:cfHZQneznRETF4mcubEsWacZi@clust
     restaurantCollection.insertOne({
       name, 
       address,
-      menuItems: [],
-      reviews: []
+      menuItems: []
     });
     res.send('Success Added new restaurant');
   });
@@ -107,6 +107,7 @@ MongoClient.connect('mongodb+srv://christianjuth:cfHZQneznRETF4mcubEsWacZi@clust
     const { reviewUsername, reviewStars, reviewComment } = req.body;
 
     const restaurantCollection = db.collection('restaurants');
+    const reviewCollection = db.collection('reviews');
 
     let restaurant; 
     try {
@@ -117,38 +118,35 @@ MongoClient.connect('mongodb+srv://christianjuth:cfHZQneznRETF4mcubEsWacZi@clust
       res.status(404).send("Error restaurant does not exist");
       return;
     }
-  
-    for (const r of restaurant.reviews) {
-      if (r.reviewUsername === reviewUsername) {
-        res.status(409).send("Error you have already written a review");
-        return;
-      }
-    }
 
     if ([reviewUsername, reviewStars, reviewComment].includes(undefined)) {
       res.status(400).send("reviewUsername, reviewStars, reviewComment are all required");
       return;
     }
 
-    const computedStarts = +reviewStars; // cast to number
+    // check if user already wrote a review
+    const oldReview = await reviewCollection.findOne({
+      res_id: ObjectID(resId),
+      reviewUsername
+    });
+    if (oldReview) {
+      res.status(409).send(`Error you have already written a review for ${restaurant.name}`);
+      return;
+    }
 
+    const computedStarts = +reviewStars; // cast to number
     if (computedStarts < 0 || computedStarts > 5) {
       res.status(400).send('reviewStars must be between 0 and 5');
       return;
     }
 
-    restaurantCollection.updateOne(
-      { '_id': ObjectID(resId) },
-      {
-        '$push': {
-          reviews: {
-            reviewUsername, 
-            reviewStars, 
-            reviewComment
-          }
-        }
-      }
-    );
+    reviewCollection.insertOne({
+      res_id: restaurant._id,
+      reviewUsername, 
+      reviewStars, 
+      reviewComment,
+      reviewUpvotes
+    });
   
     res.send(`Success new comment has been added to review section of ${restaurant.name}`);
   });
@@ -157,6 +155,7 @@ MongoClient.connect('mongodb+srv://christianjuth:cfHZQneznRETF4mcubEsWacZi@clust
     const { resId } = req.params;
 
     const restaurantCollection = db.collection('restaurants');
+    const reviewCollection = db.collection('reviews');
 
     let restaurant; 
     try {
@@ -167,11 +166,54 @@ MongoClient.connect('mongodb+srv://christianjuth:cfHZQneznRETF4mcubEsWacZi@clust
       res.status(404).send("Error restaurant does not exist");
       return;
     }
+
+    const reviews = await reviewCollection.find({
+      res_id: ObjectID(resId)
+    }).toArray();
   
-    res.json(restaurant.reviews);
+    res.json(reviews);
   });
 
-  app.listen(3000);
+  app.post('/restaurants/:resId/reviews/:reviewId/upvote', async (req, res) => {
+    const { resId, reviewId } = req.params;
+  
+    const restaurantCollection = db.collection('restaurants');
+    const reviewCollection = db.collection('reviews');
+  
+    let restaurant; 
+    try {
+      restaurant = await restaurantCollection.findOne({ '_id': ObjectID(resId) });
+    } catch(err) {}
+  
+    if (!restaurant) {
+      res.status(404).send("Error restaurant does not exist");
+      return;
+    }
+  
+    let review; 
+    try {
+      review = await restaurantCollection.findOne({ '_id': ObjectID(reviewId) });
+    } catch(err) {}
+  
+    if (!review) {
+      res.status(404).send("Error review does not exist");
+      return;
+    }
+  
+    reviewCollection.update(
+      {"_id": ObjectID(reviewId)},
+      {
+        "$inc": { reviewUpvotes: '1' }
+      }
+    );
+  
+    res.send("Successful");
+  });
+
+  app.listen(config.port, () => {
+    console.log(`App listening at http://localhost:${config.port}`)
+  });
+  process.on('SIGTERM', () => client.close());
 
 });
 

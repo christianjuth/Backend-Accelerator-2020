@@ -33,4 +33,4 @@ jobs:
           path: src/shared/node_modules
           key: v1-${{ runner.os }}-${{ hashFiles('src/shared/yarn.lock') }}
       - name: Test
-        run: yarn test --watchAll=false --ci
+        run: yarn test --watchAll=false --ci --runInBand

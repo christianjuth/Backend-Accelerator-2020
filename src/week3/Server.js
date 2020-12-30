@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const config = require('../../config');
 
 // Express App
 const app = express();
@@ -70,7 +71,9 @@ app.get('/restaurants/:resName/items', (req, res) => {
   res.send(menuItems[resName]);
 });
 
-app.listen(3000);
+app.listen(config.port, () => {
+  console.log(`App listening at http://localhost:${config.port}`)
+});
 
 // Export app for testing
 exports.app = app;

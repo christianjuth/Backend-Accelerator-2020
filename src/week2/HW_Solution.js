@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const config = require('../../config');
 
 // Express App
 const app = express();
@@ -32,7 +33,9 @@ app.get('/books', (req, res) => {
   res.send(listOfBooks.join(', '));
 });
 
-app.listen(3000);
+app.listen(config.port, () => {
+  console.log(`App listening at http://localhost:${config.port}`)
+});
 
 // Export app for testing
 exports.app = app;

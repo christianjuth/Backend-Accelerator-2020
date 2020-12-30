@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const config = require('../../config');
 
 // Express App
 const app = express();
@@ -7,9 +8,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.raw());
 
-const restaurantList = [];
+let restaurantList = [];
 const menuItems = {};
 const reviews = {};
+
 
 app.post('/restaurants', (req, res) => {
   const { name, address } = req.body;
@@ -29,9 +31,51 @@ app.post('/restaurants', (req, res) => {
   res.send('Success Added new restaurant');
 });
 
+
 app.get('/restaurants', (req, res) => {
   res.send(restaurantList);
 });
+
+
+app.put('/restaurants/:resName', (req, res) => {
+  const { resName } = req.params; 
+  const { name, address } = req.body;
+  
+  const index = restaurantList.findIndex(r => r.name === resName);
+  
+  if (index >= 0) {
+    restaurantList[index] = {
+      name,
+      address
+    };
+    res.send(`${resName} updated, success!`);
+    return;
+  }
+  
+  res.send(`${resName} restaurant not found!`);
+});
+
+
+app.delete('/restaurants/:resName', (req, res) => {
+  const { resName } = req.params; 
+  
+  const updatedRestaurantList = restaurantList.filter(r => r.name !== resName);
+  
+  if (updatedRestaurantList.length < restaurantList.length) {
+    // save our change
+    restaurantList = updatedRestaurantList;
+
+    // perform additional cleanup
+    delete menuItems[resName];
+    delete reviews[resName];
+
+    res.status(200).send(`Successfully deleted ${resName}`);
+    return;
+  }
+  
+  res.status(404).send(`Unable to delete ${resName}`);
+});
+
 
 app.post('/restaurants/:resName/items', (req, res) => {
   const { resName } = req.params; 
@@ -70,51 +114,9 @@ app.get('/restaurants/:resName/items', (req, res) => {
   res.send(menuItems[resName]);
 });
 
-// HOMEOWRK STARTING FROM HERE
-
-app.post('/restaurants/:resName/reviews', (req, res) => {
-  const { resName } = req.params; 
-  const { reviewUsername, reviewStars, reviewComment } = req.body;
-
-  if (reviews[resName] === undefined) {
-    res.status(404).send("Error restaurant does not exist");
-    return;
-  }
-
-  for (const r of reviews[resName]) {
-    if (r.reviewUsername === reviewUsername) {
-      res.status(409).send("Error you have already written a review");
-      return;
-    }
-  }
-
-  reviews[resName].push({
-    reviewUsername, 
-    itemResName: resName, 
-    reviewStars, 
-    reviewComment
-  });
-  res.send(`Success new comment has been added to review section of ${resName}`);
-
+app.listen(config.port, () => {
+  console.log(`App listening at http://localhost:${config.port}`)
 });
-
-app.get('/restaurants/:resName/reviews', (req, res) => {
-  const { resName } = req.params;
-  const { limit } = req.query;
-  
-  if (reviews[resName] === undefined) {
-    res.status(404).send("Error restaurant does not exist");
-    return;
-  }
-
-  let items = reviews[resName];
-  if (limit) {
-    items = items.slice(0, limit)
-  }
-  res.send(items);
-});
-
-app.listen(3000);
 
 // Export app for testing
 exports.app = app;

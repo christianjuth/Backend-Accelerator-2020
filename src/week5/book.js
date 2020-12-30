@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const MongoClient = require('mongodb').MongoClient;
+const config = require('../../config');
 
 // Express App
 const app = express();
@@ -32,7 +33,9 @@ MongoClient.connect('mongodb://localhost:27017', { useUnifiedTopology: true }, (
     res.send('Book successfully inserted');
   });
 
-  app.listen(3000);
+  app.listen(config.port, () => {
+    console.log(`App listening at http://localhost:${config.port}`)
+  });
 
 });
 

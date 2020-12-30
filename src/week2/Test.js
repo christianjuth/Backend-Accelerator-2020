@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const config = require('../../config');
 
 // Helper Functions
 function randomInt(min, max) {
@@ -34,7 +35,9 @@ app.get('/testscores', (req, res) => {
   res.send(testscores.join(', '));
 });
 
-app.listen(3000);
+app.listen(config.port, () => {
+  console.log(`App listening at http://localhost:${config.port}`)
+});
 
 // Export app for testing
 exports.app = app;
